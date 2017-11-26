@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Simple Voting DApp</title>
+  <script type="text/javascript" src="./js/jquery-3.2.1.min.js"></script>
+  <script type="text/javascript" src="./js/web3.min.js"></script>
+  <script type="text/javascript" src="./js/truffle-contract.min.js"></script>
+  <script type="text/javascript" src="./js/materialize.min.js"></script>
+  <link href="./css/materialize.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container">
+    	<div class="content">
+    		<div class="row">
+    			<h1>Vote your candidate!</h1>
+    		</div>
+	        <div class="row">
+	        	<div class="col s6 m6">
+		        	<div class="card">
+			            <div class="card-image">
+			              <img src="./images/donald_duck.jpeg">
+			              <span class="card-title">Donald Duck</span>
+			            </div>
+			            <div class="card-content">
+			              <p>Happiness is the richest thing we will ever own.</p>
+			              <span id="totalvote0"></span>
+			            </div>
+			            <div class="card-action center">
+			              <a href="#" onclick="vote(0);location.reload(true);">Vote</a>
+			            </div>
+			        </div>
+	        	</div>
+	        	<div class="col s6 m6">
+		        	<div class="card">
+			            <div class="card-image">
+			              <img src="./images/howard_duck.jpg">
+			              <span class="card-title">Howard the Duck</span>
+			            </div>
+			            <div class="card-content">
+			              <p>No one laughs at a master of Quack- Fu!</p>
+			              <span id="totalvote1"></span>
+			            </div>
+			            <div class="card-action center">
+			              <a href="#" onclick="vote(1);location.reload(true);">Vote</a>
+			            </div>
+			        </div>
+	        	</div>
+	        </div>
+     	</div>
+    </div>
+
+<script type="text/javascript">
+var VotingContract;
+var accounts;
+var account;
+function init_contract(){
+	$.getJSON("./artifacts/Voting.json", function(json) {
+    	contract_artifact = json;
+    	VotingContract = TruffleContract(json);
+    	VotingContract.setProvider(web3.currentProvider);
+
+    	showTotalVote();
+	});
+	
+}
+
+function init(){
+
+	/*if (typeof window.web3 !== 'undefined') {
+		web3 = new Web3(web3.currentProvider);       		
+	} else {
+		web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
+	}*/
+	web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
+
+    web3.eth.getAccounts(function(err, accs) {
+      if (err != null) {
+        alert("There was an error fetching your accounts.");
+        return;
+      }
+
+      if (accs.length == 0) {
+        alert("Couldn't get any accounts! Make sure your Ethereum client is configured correctly.");
+        return;
+      }
+
+      accounts = accs;
+      account = accounts[0];
+      console.log(account);
+  	});
+
+  	init_contract();
+}
+
+function checkEligibility(){
+	VotingContract.deployed().then(function(instance) {
+      return instance.checkEligibility.call({from: account});
+    }).then(function(value) {
+      console.log(value.valueOf());
+    }).catch(function(e) {
+      console.log(e)
+    });
+}
+
+function vote(id){
+	VotingContract.deployed().then(function(instance) {
+      return instance.vote(id, {from: account});
+    }).then(function(value) {
+      console.log(value.valueOf());
+      alert("vote success!");
+    }).catch(function(e) {
+      console.log(e);
+      alert("vote failed!");
+    });
+}
+
+function totalVote(id){
+	VotingContract.deployed().then(function(instance) {
+      return instance.totalVote.call(id, {from: account});
+    }).then(function(value) {
+      console.log(value.valueOf());
+      document.getElementById("totalvote"+id).innerHTML = "Total vote: " + value.valueOf();
+    }).catch(function(e) {
+      console.log(e)
+    });
+}
+
+function showTotalVote(){
+	totalVote(0);
+	totalVote(1);
+}
+
+init();
+</script>
+</body>
+</html>
